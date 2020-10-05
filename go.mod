@@ -1,8 +1,9 @@
-module github.com/brocaar/lorawan
+module github.com/sigidagi/lorawan
 
 require (
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
 	github.com/go-redis/redis/v7 v7.4.0
+	github.com/google/uuid v1.1.2
 	github.com/gopherjs/gopherjs v0.0.0-20190328170749-bb2674552d8f // indirect
 	github.com/jacobsa/crypto v0.0.0-20180924003735-d95898ceee07
 	github.com/jacobsa/oglematchers v0.0.0-20150720000706-141901ea67cd // indirect

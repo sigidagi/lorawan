@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/brocaar/lorawan"
+	"github.com/sigidagi/lorawan"
 	"github.com/stretchr/testify/require"
 )
 
