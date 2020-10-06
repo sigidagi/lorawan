@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/gofrs/uuid"
 	"github.com/sigidagi/lorawan"
 	"github.com/sigidagi/lorawan/backend"
 )
@@ -47,7 +48,7 @@ func (ts *JoinServerTestSuite) TearDownSuite() {
 	ts.server.Close()
 }
 
-func (ts *JoinServerTestSuite) getDeviceKeys(devEUI lorawan.EUI64) (DeviceKeys, error) {
+func (ts *JoinServerTestSuite) getDeviceKeys(devEUI lorawan.EUI64, devUUD uuid.UUID) (DeviceKeys, error) {
 	if dk, ok := ts.deviceKeys[devEUI]; ok {
 		return dk, nil
 	}

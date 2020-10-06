@@ -3,8 +3,8 @@ package joinserver
 import (
 	"fmt"
 
-	"github.com/sigidagi/lorawan"
 	"github.com/pkg/errors"
+	"github.com/sigidagi/lorawan"
 
 	"github.com/sigidagi/lorawan/backend"
 )

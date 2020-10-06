@@ -11,6 +11,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/gofrs/uuid"
 	"github.com/sigidagi/lorawan"
 	"github.com/sigidagi/lorawan/backend"
 )
@@ -28,10 +29,10 @@ type DeviceKeys struct {
 // HandlerConfig holds the join-server handler configuration.
 type HandlerConfig struct {
 	Logger                    *log.Logger
-	GetDeviceKeysByDevEUIFunc func(devEUI lorawan.EUI64) (DeviceKeys, error)    // ErrDevEUINotFound must be returned when the device does not exist
-	GetKEKByLabelFunc         func(label string) ([]byte, error)                // must return an empty slice when no KEK exists for the given label
-	GetASKEKLabelByDevEUIFunc func(devEUI lorawan.EUI64) (string, error)        // must return an empty string when no label exists
-	GetHomeNetIDByDevEUIFunc  func(devEUI lorawan.EUI64) (lorawan.NetID, error) // ErrDevEUINotFound must be returned when the device does not exist
+	GetDeviceKeysByDevEUIFunc func(devEUI lorawan.EUI64, devUUID uuid.UUID) (DeviceKeys, error) // ErrDevEUINotFound must be returned when the device does not exist
+	GetKEKByLabelFunc         func(label string) ([]byte, error)                                // must return an empty slice when no KEK exists for the given label
+	GetASKEKLabelByDevEUIFunc func(devEUI lorawan.EUI64) (string, error)                        // must return an empty string when no label exists
+	GetHomeNetIDByDevEUIFunc  func(devEUI lorawan.EUI64) (lorawan.NetID, error)                 // ErrDevEUINotFound must be returned when the device does not exist
 }
 
 type handler struct {
@@ -217,7 +218,7 @@ func (h *handler) handleJoinReq(w http.ResponseWriter, b []byte) {
 		return
 	}
 
-	dk, err := h.config.GetDeviceKeysByDevEUIFunc(joinReqPL.DevEUI)
+	dk, err := h.config.GetDeviceKeysByDevEUIFunc(joinReqPL.DevEUI, joinReqPL.DevUUID)
 	if err != nil {
 		switch err {
 		case ErrDevEUINotFound:
@@ -268,7 +269,7 @@ func (h *handler) handleRejoinReq(w http.ResponseWriter, b []byte) {
 		return
 	}
 
-	dk, err := h.config.GetDeviceKeysByDevEUIFunc(rejoinReqPL.DevEUI)
+	dk, err := h.config.GetDeviceKeysByDevEUIFunc(rejoinReqPL.DevEUI, rejoinReqPL.DevUUID)
 	if err != nil {
 		switch err {
 		case ErrDevEUINotFound:
