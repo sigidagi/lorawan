@@ -9,9 +9,9 @@ import (
 	"time"
 
 	keywrap "github.com/NickBall/go-aes-key-wrap"
-	"github.com/sigidagi/lorawan"
+	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
-	"github.com/google/uuid"
+	"github.com/sigidagi/lorawan"
 )
 
 // RatePolicy defines the RatePolicy type.
@@ -324,7 +324,7 @@ type JoinReqPayload struct {
 	MACVersion string             `json:"MACVersion"` // e.g. "1.0.2"
 	PHYPayload HEXBytes           `json:"PHYPayload"`
 	DevEUI     lorawan.EUI64      `json:"DevEUI"`
-	DevUUID	   uuid.UUID		  `json:"DevUUID"`
+	DevUUID    uuid.UUID          `json:"DevUUID"`
 	DevAddr    lorawan.DevAddr    `json:"DevAddr"`
 	DLSettings lorawan.DLSettings `json:"DLSettings"`
 	RxDelay    int                `json:"RxDelay"`
@@ -361,7 +361,7 @@ type RejoinReqPayload struct {
 	PHYPayload HEXBytes           `json:"PHYPayload"`
 	DevEUI     lorawan.EUI64      `json:"DevEUI"`
 	DevAddr    lorawan.DevAddr    `json:"DevAddr"`
-	DevUUID	   uuid.UUID		  `json:"DevUUID"`
+	DevUUID    uuid.UUID          `json:"DevUUID"`
 	DLSettings lorawan.DLSettings `json:"DLSettings"`
 	RxDelay    int                `json:"RxDelay"`
 	CFList     HEXBytes           `json:"CFList,omitempty"` // Optional
