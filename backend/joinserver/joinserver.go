@@ -33,6 +33,7 @@ type HandlerConfig struct {
 	GetKEKByLabelFunc         func(label string) ([]byte, error)                                // must return an empty slice when no KEK exists for the given label
 	GetASKEKLabelByDevEUIFunc func(devEUI lorawan.EUI64) (string, error)                        // must return an empty string when no label exists
 	GetHomeNetIDByDevEUIFunc  func(devEUI lorawan.EUI64) (lorawan.NetID, error)                 // ErrDevEUINotFound must be returned when the device does not exist
+	GetAppEUIByDevEUIFunc     func(devEUI lorawan.EUI64) (lorawan.AES128Key, error)             // ErrDevEUINotFound must be returned when the device does not exist
 }
 
 type handler struct {
@@ -81,6 +82,15 @@ func NewHandler(config HandlerConfig) (http.Handler, error) {
 		}
 	}
 
+	if h.config.GetAppEUIByDevEUIFunc == nil {
+
+		h.log.Warning("backend/joinserver: get appeui by deveui function is not set")
+
+		h.config.GetAppEUIByDevEUIFunc = func(devEUI lorawan.EUI64) (lorawan.AES128Key, error) {
+			return lorawan.AES128Key{}, ErrDevEUINotFound
+		}
+	}
+
 	return &h, nil
 }
 
@@ -113,6 +123,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.handleRejoinReq(w, b)
 	case backend.HomeNSReq:
 		h.handleHomeNSReq(w, b)
+	case backend.AppEUIReq:
+		h.handleAppEUIReq(w, b)
 	default:
 		h.returnError(w, http.StatusBadRequest, backend.Other, fmt.Sprintf("invalid MessageType: %s", basePL.MessageType))
 	}
@@ -136,6 +148,27 @@ func (h *handler) returnError(w http.ResponseWriter, code int, resultCode backen
 	}
 
 	w.Write(b)
+}
+
+func (h *handler) returnAppEUIReqError(w http.ResponseWriter, basePL backend.BasePayload, code int, resultCode backend.ResultCode, msg string) {
+
+	appPL := backend.AppEUIAnsPayload{
+		BasePayloadResult: backend.BasePayloadResult{
+			BasePayload: backend.BasePayload{
+				ProtocolVersion: backend.ProtocolVersion1_0,
+				SenderID:        basePL.ReceiverID,
+				ReceiverID:      basePL.SenderID,
+				TransactionID:   basePL.TransactionID,
+				MessageType:     backend.AppEUIAns,
+			},
+			Result: backend.Result{
+				ResultCode:  resultCode,
+				Description: msg,
+			},
+		},
+	}
+
+	h.returnPayload(w, code, appPL)
 }
 
 func (h *handler) returnJoinReqError(w http.ResponseWriter, basePL backend.BasePayload, code int, resultCode backend.ResultCode, msg string) {
@@ -208,6 +241,54 @@ func (h *handler) returnPayload(w http.ResponseWriter, code int, pl interface{})
 	}
 
 	w.Write(b)
+}
+
+func (h *handler) handleAppEUIReq(w http.ResponseWriter, b []byte) {
+
+	var appEUIReqPL backend.AppEUIReqPayload
+	err := json.Unmarshal(b, &appEUIReqPL)
+	if err != nil {
+		h.returnError(w, http.StatusBadRequest, backend.Other, err.Error())
+		return
+	}
+
+	eui, err := h.config.GetAppEUIByDevEUIFunc(appEUIReqPL.DevEUI)
+	if err != nil {
+		switch err {
+		case ErrDevEUINotFound:
+			h.returnJoinReqError(w, appEUIReqPL.BasePayload, http.StatusBadRequest, backend.UnknownDevEUI, err.Error())
+		default:
+			h.returnAppEUIReqError(w, appEUIReqPL.BasePayload, http.StatusBadRequest, backend.Other, err.Error())
+		}
+		return
+	}
+
+	ans := backend.AppEUIAnsPayload{
+		BasePayloadResult: backend.BasePayloadResult{
+			BasePayload: backend.BasePayload{
+				ProtocolVersion: backend.ProtocolVersion1_0,
+				SenderID:        appEUIReqPL.ReceiverID,
+				ReceiverID:      appEUIReqPL.SenderID,
+				TransactionID:   appEUIReqPL.TransactionID,
+				MessageType:     backend.AppEUIAns,
+			},
+			Result: backend.Result{
+				ResultCode: backend.Success,
+			},
+		},
+		AppEUI: eui,
+	}
+
+	h.log.WithFields(log.Fields{
+		"message_type":   ans.BasePayload.MessageType,
+		"sender_id":      ans.BasePayload.SenderID,
+		"receiver_id":    ans.BasePayload.ReceiverID,
+		"transaction_id": ans.BasePayload.TransactionID,
+		"result_code":    ans.Result.ResultCode,
+		"dev_eui":        appEUIReqPL.DevEUI,
+	}).Info("backend/joinserver: sending response")
+
+	h.returnPayload(w, http.StatusOK, ans)
 }
 
 func (h *handler) handleJoinReq(w http.ResponseWriter, b []byte) {

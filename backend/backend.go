@@ -46,6 +46,8 @@ const (
 	JoinAns     MessageType = "JoinAns"
 	RejoinReq   MessageType = "RejoinReq"
 	RejoinAns   MessageType = "RejoinAns"
+	AppEUIReq   MessageType = "AppEUIReq"
+	AppEUIAns   MessageType = "AppEUIAns"
 	AppSKeyReq  MessageType = "AppSKeyReq"
 	AppSKeyAns  MessageType = "AppSKeyAns"
 	PRStartReq  MessageType = "PRStartReq"
@@ -329,6 +331,16 @@ type JoinReqPayload struct {
 	DLSettings lorawan.DLSettings `json:"DLSettings"`
 	RxDelay    int                `json:"RxDelay"`
 	CFList     HEXBytes           `json:"CFList,omitempty"` // Optional
+}
+
+type AppEUIReqPayload struct {
+	BasePayload
+	DevEUI lorawan.EUI64 `json:"DevEUI"`
+}
+
+type AppEUIAnsPayload struct {
+	BasePayloadResult
+	AppEUI lorawan.AES128Key
 }
 
 // GetBasePayload returns the base payload.
